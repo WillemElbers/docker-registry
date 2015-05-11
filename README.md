@@ -70,13 +70,17 @@ notifications:
 
 ### start / stop
 
+```
 sudo docker start registry
 sudo docker stop registry
 sudo docker logs --tail=100 -f registry
+```
 
 ### administration
 
+```
 sudo docker run -t -i --rm --volumes-from registry_volume ubuntu /bin/bash
+```
 
 ## Nginx proxy
 
@@ -95,7 +99,7 @@ sudo docker run -t -i --rm --volumes-from nginx_volume wilelb/nginx /bin/bash
 mkdir -p etc/nginx/ssl
 vi /etc/nginx/ssl/nginx.ssl.config
 
-
+```
 [req]
 prompt=no
 default_bits=2048
@@ -110,20 +114,25 @@ string_mask=MASK:0002
 emailAddress = <EMAIL>
 countryName = <COUNTRY>
 commonName = <HOSTNAME>
+```
 
+```
 openssl req -config /etc/nginx/ssl/nginx.ssl.config -new -x509 -days 365 -keyout /etc/nginx/ssl/nginx.key -out /etc/nginx/ssl/nginx.crt
+```
 
+```
 cd /etc/nginx/ssl/
 chmod go-r nginx.*
-
+```
 
 3. create server
+```
 sudo docker create --link registry:registry -p 80:80 -p 443:443 --volumes-from nginx_volume --name nginx wilelb/nginx
 sudo docker run -t -i --rm --volumes-from nginx_volume ubuntu /bin/bash
+```
 
-
-
-
+Example nginx configuration:
+```
 #
 # HTTPS proxy, no authentication
 #
@@ -165,24 +174,31 @@ server {
                 proxy_set_header   X-Forwarded-Proto https;       
         }
 }
+```
 
 ## Generating user accounts
 
+```
 apt-get update
 apt-get install apache2-utils
 htpasswd -c /etc/nginx/.htpasswd wilelb
+```
 
 ## Configure docker daemon to trust the private registry certificate
 
+Ssh into the boot2docker vm and switch to the root user:
+```
 boot2docker ssh
 sudo su
+```
 
+Install the certificate for the docker daemon:
 ```
 mkdir -p /etc/docker/certs.d/docker.clarin.eu
 echo -n | openssl s_client -connect docker.clarin.eu:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /etc/docker/certs.d/docker.clarin.eu/ca.crt
 ```
 
-Install the certificate 
+Install the certificate:
 ```
 /usr/local/etc/ssl/certs# ln -s /etc/docker/certs.d/docker.clarin.eu/ca.crt docker.clarin.eu.crt
 openssl x509 -hash -in docker.clarin.eu.crt
