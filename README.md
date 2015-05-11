@@ -131,7 +131,7 @@ sudo docker create --link registry:registry -p 80:80 -p 443:443 --volumes-from n
 sudo docker run -t -i --rm --volumes-from nginx_volume ubuntu /bin/bash
 ```
 
-Example nginx configuration:
+Example nginx configuration (See `nginx-no-auth.conf` as well):
 ```
 #
 # HTTPS proxy, no authentication
