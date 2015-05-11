@@ -1,0 +1,26 @@
+############################################################
+# Dockerfile to build Nginx Installed Containers
+# Based on Ubuntu
+############################################################
+
+# Set the base image to Ubuntu
+FROM ubuntu:14.04
+
+# File Author / Maintainer
+MAINTAINER willem@clarin.eu 
+
+# Install necessary tools
+RUN apt-get update && apt-get install -y nano openssl nginx nginx-extras apache2-utils
+
+# Append "daemon off;" to the beginning of the configuration
+RUN mkdir -p /etc/nginx/ssl && \
+    echo "daemon off;" >> /etc/nginx/nginx.conf
+
+VOLUME ["/etc/nginx/", "/var/log/nginx/", "/usr/share/nginx/html"]
+
+# Expose ports
+EXPOSE 443
+
+# Set the default command to execute
+# when creating a new container
+CMD service nginx start
