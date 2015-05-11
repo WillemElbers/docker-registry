@@ -176,13 +176,46 @@ server {
 }
 ```
 
+## Expected result
+
+If both the registry and nginx containers have been started, the expected result
+should look something similar to the examples below.
+
+Listing the running containers, `sudo docker ps`, should produce the following:
+```
+CONTAINER ID        IMAGE                 COMMAND                CREATED             STATUS              PORTS                          NAMES
+ddfa86b515f2        clarin/nginx:latest   "/bin/sh -c 'service   About an hour ago   Up About an hour    80/tcp, 0.0.0.0:443->443/tcp   nginx
+348d482634e1        registry:2.0          "registry /etc/regis   6 hours ago         Up 6 hours          127.0.0.1:5000->5000/tcp       registry
+```
+
+Listing all containers, `sudo docker ps -a`, should produce the following:
+```
+CONTAINER ID        IMAGE                 COMMAND                CREATED             STATUS              PORTS                          NAMES
+ddfa86b515f2        clarin/nginx:latest   "/bin/sh -c 'service   About an hour ago   Up About an hour    80/tcp, 0.0.0.0:443->443/tcp   nginx
+3ad7c63f0b8f        clarin/nginx:latest   "/bin/sh -c 'service   6 hours ago                                                            nginx_volume
+348d482634e1        registry:2.0          "registry /etc/regis   6 hours ago         Up 6 hours          127.0.0.1:5000->5000/tcp       registry
+180744c3b259        registry:2.0          "registry cmd/regist   6 hours ago                                                            registry_volume
+```
+
 ## Generating user accounts
 
+Start a container with the nginx_volume mounted:
 ```
-apt-get update
-apt-get install apache2-utils
-htpasswd -c /etc/nginx/.htpasswd wilelb
+sudo docker run -ti --rm --volumes-from nginx_volume clarin/nginx /bin/bash
 ```
+
+To create the initial .htpasswd file:
+```
+htpasswd -c /etc/nginx/.htpasswd <username> <password>
+```
+
+Add additional accounts to the .htpasswd file:
+```
+htpasswd /etc/nginx/.htpasswd <newusername> <newpassword>
+```
+
+To finish up just exit the container. Since we specified the `--rm` flag the container
+is nicely cleaned up upon exit.
 
 ## Configure docker daemon to trust the private registry certificate
 
@@ -206,3 +239,47 @@ ln -s docker.clarin.eu.crt c6359835.0
 ```
 
 If you want to install the certificate for another private registry you can replace "docker.clarin.eu" with the fully qualified domain name of that host.
+
+## Links
+* https://docs.docker.com/registry/
+* https://docs.docker.com/registry/deploying/
+* https://github.com/docker/distribution/blob/master/docs/configuration.md
+* https://github.com/docker/distribution/blob/master/docs/spec/auth/token.md
+
+* https://github.com/docker/distribution/issues/489
+* https://github.com/docker/distribution/issues/397
+* https://github.com/docker/docker-registry/issues/852
+* http://grokbase.com/t/gg/docker-user/154raty2c1/docker-registry-v2-with-nginx-auth-fails
+
+# Using the private docker registry
+
+## log in
+
+```
+docker login docker.clarin.eu
+```
+And supply your username, password and optionally your email.
+
+## pushing
+
+Tag a docker image with the private registry information:
+```
+docker tag wilelb/unity-idm docker.clarin.eu/unity-idm
+```
+
+Push this tag to the private registry:
+```
+docker push docker.clarin.eu/unity-idm
+```
+
+## pulling
+
+Just pull the image for later use:
+```
+docker pull docker.clarin.eu/unity-idm
+```
+
+Run the container, implicitly pulling the image if it is not available yet:
+```
+docker run docker.clarin.eu/unity-idm
+```
